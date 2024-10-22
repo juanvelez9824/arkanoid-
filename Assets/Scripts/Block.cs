@@ -1,66 +1,28 @@
 using UnityEngine;
-
 public class Block : MonoBehaviour
 {
-    [Header("Block Settings")]
-    public int hitPoints = 1;
-    public int scoreValue = 100;
-    public bool dropsPowerUp = false;
-    public GameObject powerUpPrefab;
-    
-    [Header("Visual Feedback")]
-    public Sprite[] damageSprites;
-    
-    private SpriteRenderer spriteRenderer;
-    private int currentHitPoints;
-    
-    void Start()
+    public int hitPoints = 2;  // Número de golpes para destruir
+    private Renderer renderer;
+    public Color damagedColor;  // Color del bloque después de recibir un golpe
+
+    private void Start()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        currentHitPoints = hitPoints;
+        renderer = GetComponent<Renderer>();
     }
-    
-    void OnCollisionEnter2D(Collision2D collision)
+
+    private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Ball"))
+        hitPoints--;
+        
+        if (hitPoints > 0)
         {
-            TakeHit();
+            renderer.material.color = damagedColor;  // Cambiar el color cuando está dañado
         }
-    }
-    
-    private void TakeHit()
-    {
-        currentHitPoints--;
-        
-        // Update visual feedback
-        if (damageSprites.Length > 0 && currentHitPoints > 0)
+        else
         {
-            int spriteIndex = hitPoints - currentHitPoints - 1;
-            if (spriteIndex >= 0 && spriteIndex < damageSprites.Length)
-            {
-                spriteRenderer.sprite = damageSprites[spriteIndex];
-            }
+            AudioManager.Instance.PlaySFX(AudioManager.Instance.blockDestroy);
+            Destroy(gameObject);
+            GameManager.Instance.AddScore(10);
         }
-        
-        if (currentHitPoints <= 0)
-        {
-            DestroyBlock();
-        }
-        
-        // Play hit sound
-        AudioManager.Instance?.PlaySound("blockHit");
-    }
-    
-    private void DestroyBlock()
-    {
-        GameManager.Instance.AddScore(scoreValue);
-        GameManager.Instance.BlockDestroyed();
-        
-        if (dropsPowerUp && powerUpPrefab != null)
-        {
-            Instantiate(powerUpPrefab, transform.position, Quaternion.identity);
-        }
-        
-        Destroy(gameObject);
     }
 }

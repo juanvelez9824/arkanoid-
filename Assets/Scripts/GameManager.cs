@@ -1,27 +1,14 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
-    
-    [Header("Game Settings")]
-    public int startingLives = 3;
-    public int currentLevel = 1;
-    public int maxLevels = 2;
-    
-    [Header("UI References")]
-    public Text scoreText;
-    public Text livesText;
-    public GameObject gameOverPanel;
-    public GameObject victoryPanel;
-    
-    private int currentScore;
-    private int currentLives;
-    private int remainingBlocks;
-    
-    void Awake()
+
+    public int score { get; private set; }
+    public int lives = 3;
+
+    private void Awake()
     {
         if (Instance == null)
         {
@@ -33,74 +20,48 @@ public class GameManager : MonoBehaviour
             Destroy(gameObject);
         }
     }
-    
-    void Start()
-    {
-        InitializeGame();
-    }
-    
-    public void InitializeGame()
-    {
-        currentScore = 0;
-        currentLives = startingLives;
-        UpdateUI();
-        CountBlocks();
-    }
-    
+
     public void AddScore(int points)
     {
-        currentScore += points;
-        UpdateUI();
+        score += points;
+        UIManager.Instance.UpdateScoreUI(score);
     }
-    
+
     public void LoseLife()
     {
-        currentLives--;
-        UpdateUI();
-        
-        if (currentLives <= 0)
+        lives--;
+        UIManager.Instance.UpdateLivesUI(lives);
+
+        if (lives <= 0)
         {
             GameOver();
         }
-    }
-    
-    public void BlockDestroyed()
-    {
-        remainingBlocks--;
-        if (remainingBlocks <= 0)
-        {
-            LevelComplete();
-        }
-    }
-    
-    private void CountBlocks()
-    {
-        remainingBlocks = FindObjectsOfType<Block>().Length;
-    }
-    
-    private void UpdateUI()
-    {
-        if (scoreText) scoreText.text = $"Score: {currentScore}";
-        if (livesText) livesText.text = $"Lives: {currentLives}";
-    }
-    
-    private void GameOver()
-    {
-        if (gameOverPanel) gameOverPanel.SetActive(true);
-        Time.timeScale = 0;
-        AudioManager.Instance?.PlaySound("gameOver");
-    }
-    
-    private void LevelComplete()
-    {
-        if (currentLevel >= maxLevels)
-        {
-            if (victoryPanel) victoryPanel.SetActive(true);
-        }
         else
         {
-            currentLevel++;
-            SceneManager.LoadScene($"Level{currentLevel}");
+            ResetBall();
         }
+    }
+
+    private void GameOver()
+    {
+        // Lógica para manejar el Game Over
+        SceneManager.LoadScene("GameOverScene");
+    }
+
+    public void ResetBall()
+    {
+        BallController.Instance.ResetBall();
+    }
+
+    public void LoadNextLevel()
+    {
+        // Implementa la lógica para cargar el siguiente nivel
+        int nextLevelIndex = SceneManager.GetActiveScene().buildIndex + 1;
+        SceneManager.LoadScene(nextLevelIndex);
+    }
+
+    public void RestartLevel()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
