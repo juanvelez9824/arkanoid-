@@ -28,6 +28,10 @@ public class LevelGenerator : MonoBehaviour
     public BlockType[] blockTypes;
     public LevelPattern pattern = LevelPattern.Random;
     public bool randomizePattern = true; // Si queremos que el patrón sea aleatorio
+
+    [Header("Límites Personalizados")]
+    public Transform boundaryFrame; // Referencia al objeto que define el área de juego
+    public bool showBoundaryGizmos = true; // Para visualizar el área en el editor
     
     [Header("Dimensiones")]
     public int minRows = 3;
@@ -38,8 +42,7 @@ public class LevelGenerator : MonoBehaviour
     public float blockHeight = 0.5f;
     public float spacing = 0.1f; // Espacio entre bloques
     
-    [Header("Posicionamiento")]
-    public Vector2 startPos = new Vector2(-7, 4);
+    [Header("Configuración")]
     public float emptySpaceProbability = 0.1f;
     
     [Header("Dificultad")]
@@ -50,34 +53,80 @@ public class LevelGenerator : MonoBehaviour
     private int rows;
     private int columns;
     private List<GameObject> currentBlocks = new List<GameObject>();
+    private Bounds boundaryBounds;
+    private Vector2 startPos;
 
     void Start()
     {
+        if (boundaryFrame == null)
+        {
+            Debug.LogError("¡No se ha asignado el marco de límites! Por favor, asigna un objeto para definir el área de juego.");
+            return;
+        }
+        
+        CalculateBoundaryBounds();
         GenerateLevel();
+    }
+
+    private void CalculateBoundaryBounds()
+    {
+        // Obtener los límites del marco
+        Renderer frameRenderer = boundaryFrame.GetComponent<Renderer>();
+        if (frameRenderer != null)
+        {
+            boundaryBounds = frameRenderer.bounds;
+        }
+        else
+        {
+            // Si no tiene Renderer, usar el tamaño del objeto
+            boundaryBounds = new Bounds(boundaryFrame.position, boundaryFrame.localScale);
+        }
+    }
+
+    private void AdjustLevelDimensions()
+    {
+        // Calcular el espacio disponible dentro del marco
+        float availableWidth = boundaryBounds.size.x;
+        float availableHeight = boundaryBounds.size.y;
+
+        // Calcular el máximo número de columnas que caben en el ancho disponible
+        int maxPossibleColumns = Mathf.FloorToInt(availableWidth / (blockWidth + spacing));
+        maxColumns = Mathf.Min(maxColumns, maxPossibleColumns);
+
+        // Calcular el máximo número de filas que caben en el alto disponible
+        int maxPossibleRows = Mathf.FloorToInt(availableHeight / (blockHeight + spacing));
+        maxRows = Mathf.Min(maxRows, maxPossibleRows);
+
+        // Calcular la posición inicial para centrar los bloques en el marco
+        float levelWidth = columns * (blockWidth + spacing) - spacing;
+        float levelHeight = rows * (blockHeight + spacing) - spacing;
+
+        startPos = new Vector2(
+            boundaryBounds.min.x + (availableWidth - levelWidth) * 0.5f,
+            boundaryBounds.max.y - (availableHeight - levelHeight) * 0.5f
+        );
     }
 
     public void GenerateLevel()
     {
-        // Limpiar nivel anterior
+        if (boundaryFrame == null) return;
+
         ClearLevel();
-        
-        // Ajustar dificultad según el nivel
         AdjustDifficultyForLevel();
         
         // Establecer dimensiones del nivel
         rows = Random.Range(minRows, maxRows + 1);
         columns = Random.Range(minColumns, maxColumns + 1);
 
-        // Seleccionar patrón
+        // Ajustar dimensiones según los límites del marco
+        AdjustLevelDimensions();
+
         if (randomizePattern)
         {
             pattern = (LevelPattern)Random.Range(0, System.Enum.GetValues(typeof(LevelPattern)).Length);
         }
 
-        // Generar matriz de nivel
         bool[,] levelMatrix = GenerateLevelMatrix();
-        
-        // Crear bloques según la matriz
         SpawnBlocks(levelMatrix);
     }
 
@@ -263,30 +312,41 @@ public class LevelGenerator : MonoBehaviour
             {
                 if (matrix[row, col])
                 {
-                    // Seleccionar tipo de bloque basado en probabilidades
                     BlockType selectedBlock = SelectBlockType();
                     if (selectedBlock != null)
                     {
                         Vector3 position = new Vector3(
                             startPos.x + col * (blockWidth + spacing),
                             startPos.y - row * (blockHeight + spacing),
-                            0
+                            boundaryFrame.position.z
                         );
 
-                        GameObject block = Instantiate(selectedBlock.prefab, position, Quaternion.identity);
-                        currentBlocks.Add(block);
-                        
-                        // Configurar componentes del bloque si es necesario
-                        Block blockComponent = block.GetComponent<Block>();
-                        if (blockComponent != null)
+                        // Verificar si el bloque está dentro de los límites
+                        if (IsPositionWithinBounds(position))
                         {
-                            blockComponent.points = selectedBlock.points;
-                            blockComponent.isIndestructible = selectedBlock.isIndestructible;
+                            GameObject block = Instantiate(selectedBlock.prefab, position, Quaternion.identity);
+                            currentBlocks.Add(block);
+                            
+                            Block blockComponent = block.GetComponent<Block>();
+                            if (blockComponent != null)
+                            {
+                                blockComponent.points = selectedBlock.points;
+                                blockComponent.isIndestructible = selectedBlock.isIndestructible;
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    private bool IsPositionWithinBounds(Vector3 position)
+    {
+        // Verificar si la posición (incluyendo el tamaño del bloque) está dentro del marco
+        return position.x >= boundaryBounds.min.x &&
+               position.x + blockWidth <= boundaryBounds.max.x &&
+               position.y - blockHeight >= boundaryBounds.min.y &&
+               position.y <= boundaryBounds.max.y;
     }
 
     private BlockType SelectBlockType()
@@ -310,6 +370,16 @@ public class LevelGenerator : MonoBehaviour
         }
 
         return blockTypes[0]; // Bloque por defecto
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (showBoundaryGizmos && boundaryFrame != null)
+        {
+            // Dibujar el área de juego en el editor
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(boundaryBounds.center, boundaryBounds.size);
+        }
     }
 
     public void NextLevel()

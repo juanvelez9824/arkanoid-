@@ -128,6 +128,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 1
-  damagedColor: {r: 0.9528302, g: 0.8912987, b: 0.35506406, a: 0}
+  damagedColor: {r: 0.9339623, g: 0.90938437, b: 0.7004717, a: 0}
   points: 100
   isIndestructible: 0

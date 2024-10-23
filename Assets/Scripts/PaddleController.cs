@@ -4,7 +4,7 @@ using System;
 public class PaddleController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float speed = 40f;        // Aumentado significativamente
+    [SerializeField] private float speed = 40f;       
     [SerializeField] private float maxX = 7.5f;
 
     [Header("References")]
@@ -18,6 +18,8 @@ public class PaddleController : MonoBehaviour
     private Renderer paddleRenderer;
     private float currentPowerUpTime;
     private bool isPoweredUp;
+
+    public bool canMove = true;
 
     private void Awake()
     {
@@ -37,7 +39,8 @@ public class PaddleController : MonoBehaviour
     }
 
     private void HandleMovement()
-    {
+    {   
+
         // Obtener input con soporte para teclado y touch
         float moveInput = Input.GetAxis("Horizontal");
         

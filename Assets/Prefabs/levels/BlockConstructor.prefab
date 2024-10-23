@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6554685199263976077
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6554685199263976075}
+  - component: {fileID: 6554685199263976076}
+  m_Layer: 0
+  m_Name: BlockConstructor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6554685199263976075
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6554685199263976077}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.045537446, y: -5.3, z: 24.946465}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6554685199263976076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6554685199263976077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ad7b974dd1c00d4b807d46045af16ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockTypes:
+  - prefab: {fileID: 6402283245772847923, guid: 01d8915a56b49f94e8a4695a0e8c3830, type: 3}
+    probability: 4
+    points: 2
+    isIndestructible: 0
+  - prefab: {fileID: 5634507069792997750, guid: 144cc9164648afe4aa0d84eebfc48e04, type: 3}
+    probability: 2
+    points: 1
+    isIndestructible: 0
+  - prefab: {fileID: 2788922083553178217, guid: 53598891bbad7a44abb7e80beea0d612, type: 3}
+    probability: 2
+    points: 5
+    isIndestructible: 0
+  pattern: 0
+  randomizePattern: 1
+  minRows: 6
+  maxRows: 12
+  minColumns: 5
+  maxColumns: 12
+  blockWidth: 1.5
+  blockHeight: 0.8
+  spacing: 0.1
+  startPos: {x: -7, y: 4}
+  emptySpaceProbability: 0.1
+  increaseDifficultyWithLevel: 1
+  difficultyMultiplier: 1.1
+  currentLevel: 1
