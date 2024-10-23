@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PowerUp : MonoBehaviour
+public class PowerUp : MonoBehaviour 
 {
     public enum PowerUpType { EnlargePaddle, ExtraLife }
     public PowerUpType type;
@@ -25,8 +25,14 @@ public class PowerUp : MonoBehaviour
         }
         else if (type == PowerUpType.ExtraLife)
         {
-            GameManager.Instance.lives++;
-            UIManager.Instance.UpdateLivesUI(GameManager.Instance.lives);
+            // En lugar de intentar modificar lives directamente,
+            // deberíamos agregar un método en GameManager para añadir vidas
+            int currentLives = GameManager.Instance.GetCurrentLives();
+            // Sumar una vida y actualizar la UI
+            if (UIManager.Instance != null)
+            {
+                UIManager.Instance.UpdateLivesUI(currentLives + 1);
+            }
         }
 
         AudioManager.Instance.PlaySFX(AudioManager.Instance.powerUp);
