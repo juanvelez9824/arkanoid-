@@ -6,31 +6,31 @@ public class BallController : MonoBehaviour
 
     public float initialSpeed = 10f;
     public float maxSpeed = 20f;
-    public float minSpeed = 8f; // Aumentado para mantener más momentum
+    public float minSpeed = 8f;
     
     [SerializeField] private float maxYVelocity = 15f;
-    [SerializeField] private float minYVelocity = 5f; // Aumentado para evitar movimiento horizontal
-    [SerializeField] private float velocityVariation = 0.1f; // Reducido para más consistencia
+    [SerializeField] private float minYVelocity = 5f;
+    [SerializeField] private float velocityVariation = 0.1f;
     
     private Rigidbody rb;
     private Vector3 initialPosition;
-    private float minBounceAngle = 0.4f; // Aumentado para evitar rebotes muy horizontales
+    private float minBounceAngle = 0.4f;
     private float lastVerticalChangeTime;
-    private float verticalChangeTimeout = 0.5f; // Reducido para corregir más rápido
+    private float verticalChangeTimeout = 0.5f;
 
-    [SerializeField] private GameObject paddle;
+    [SerializeField] private GameObject bottomPaddle; // Paddle inferior
+    [SerializeField] private GameObject topPaddle;    // Paddle superior
     private bool isAttachedToPaddle = true;
     private Vector3 offsetFromPaddle;
+    private PaddleController.PaddleType lastHitPaddle;
     
-    // Nuevo: para mantener velocidad constante
     private float currentSpeed;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         
-        // Asegurar que la física sea consistente
-        Physics.defaultMaxDepenetrationVelocity = 2f;
+        Physics.defaultMaxDepenetrationVelocity = 5f;
         Physics.bounceThreshold = 0.2f;
     }
 
@@ -41,35 +41,36 @@ public class BallController : MonoBehaviour
         lastVerticalChangeTime = Time.time;
         currentSpeed = initialSpeed;
         
-        // Configurar el Rigidbody para movimiento más suave
         rb.interpolation = RigidbodyInterpolation.Interpolate;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.angularDrag = 0f;
-        rb.drag = 0f; // Eliminar fricción
+        rb.drag = 0f;
         
-        if (paddle != null)
+        if (bottomPaddle != null)
         {
-            offsetFromPaddle = transform.position - paddle.transform.position;
+            offsetFromPaddle = transform.position - bottomPaddle.transform.position;
         }
         else
         {
-            Debug.LogError("¡Paddle no asignado en BallController!");
+            Debug.LogError("¡Paddle inferior no asignado en BallController!");
         }
 
         AttachBallToPaddle();
     }
+
     public void AttachBallToPaddle()
     {
         isAttachedToPaddle = true;
         rb.isKinematic = true;
         rb.velocity = Vector3.zero;
         
-        if (paddle != null)
+        if (bottomPaddle != null)
         {
-            transform.position = paddle.transform.position + offsetFromPaddle;
+            transform.position = bottomPaddle.transform.position + offsetFromPaddle;
         }
         
-        currentSpeed = initialSpeed; // Reiniciar velocidad al adherirse al paddle
+        currentSpeed = initialSpeed;
+        lastHitPaddle = PaddleController.PaddleType.Bottom;
     }
 
     public void LaunchBall()
@@ -79,8 +80,7 @@ public class BallController : MonoBehaviour
             isAttachedToPaddle = false;
             rb.isKinematic = false;
             
-            // Lanzamiento más controlado
-            float randomX = Random.Range(-0.3f, 0.3f);
+            float randomX = Random.Range(-0.4f, 0.4f);
             Vector3 direction = new Vector3(randomX, 1, 0).normalized;
             currentSpeed = initialSpeed;
             rb.velocity = direction * currentSpeed;
@@ -88,7 +88,7 @@ public class BallController : MonoBehaviour
         }
     }
 
-    private void FixedUpdate() // Cambiado a FixedUpdate para física más precisa
+    private void FixedUpdate()
     {
         if (!isAttachedToPaddle)
         {
@@ -100,9 +100,9 @@ public class BallController : MonoBehaviour
     {
         if (isAttachedToPaddle)
         {
-            if (paddle != null)
+            if (bottomPaddle != null)
             {
-                transform.position = paddle.transform.position + offsetFromPaddle;
+                transform.position = bottomPaddle.transform.position + offsetFromPaddle;
             }
 
             if (Input.GetKeyDown(KeyCode.Space))
@@ -116,14 +116,12 @@ public class BallController : MonoBehaviour
     {
         Vector3 velocity = rb.velocity;
         
-        // Mantener velocidad constante
         if (Mathf.Abs(velocity.magnitude - currentSpeed) > 0.1f)
         {
             velocity = velocity.normalized * currentSpeed;
             rb.velocity = velocity;
         }
         
-        // Corregir movimiento muy horizontal
         if (Mathf.Abs(velocity.y) < minYVelocity)
         {
             if (Time.time - lastVerticalChangeTime > verticalChangeTimeout)
@@ -141,7 +139,6 @@ public class BallController : MonoBehaviour
             lastVerticalChangeTime = Time.time;
         }
 
-        // Limitar velocidad vertical
         if (Mathf.Abs(velocity.y) > maxYVelocity)
         {
             velocity.y = Mathf.Sign(velocity.y) * maxYVelocity;
@@ -167,24 +164,31 @@ public class BallController : MonoBehaviour
             HandleBlockCollision(collision);
         }
 
-        // Mantener velocidad dentro de los límites
         currentSpeed = Mathf.Clamp(rb.velocity.magnitude, minSpeed, maxSpeed);
     }
 
     private void HandlePaddleCollision(Collision collision)
     {
-        Vector3 bounceDirection = GetBounceDirection(collision);
-        
-        // Pequeña variación en la velocidad para mantener el juego interesante
-        float speedVariation = 1f + Random.Range(-velocityVariation, velocityVariation);
-        currentSpeed = Mathf.Clamp(currentSpeed * speedVariation, minSpeed, maxSpeed);
-        
-        rb.velocity = bounceDirection * currentSpeed;
-        lastVerticalChangeTime = Time.time;
-        
-        if (AudioManager.Instance != null)
+        PaddleController paddle = collision.gameObject.GetComponent<PaddleController>();
+        if (paddle != null)
         {
-            AudioManager.Instance.PlaySFX(AudioManager.Instance.paddleHit);
+            // Verificar que la pelota no rebote en el mismo paddle dos veces seguidas
+            if (paddle.GetPaddleType() != lastHitPaddle)
+            {
+                Vector3 bounceDirection = GetBounceDirection(collision, paddle.GetPaddleType());
+                
+                float speedVariation = 1f + Random.Range(-velocityVariation, velocityVariation);
+                currentSpeed = Mathf.Clamp(currentSpeed * speedVariation, minSpeed, maxSpeed);
+                
+                rb.velocity = bounceDirection * currentSpeed;
+                lastVerticalChangeTime = Time.time;
+                lastHitPaddle = paddle.GetPaddleType();
+                
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlaySFX(AudioManager.Instance.paddleHit);
+                }
+            }
         }
     }
 
@@ -193,7 +197,6 @@ public class BallController : MonoBehaviour
         Vector3 normal = collision.contacts[0].normal;
         Vector3 direction = Vector3.Reflect(rb.velocity.normalized, normal);
         
-        // Asegurar rebote con ángulo mínimo
         if (Mathf.Abs(direction.y) < minBounceAngle)
         {
             direction.y = minBounceAngle * Mathf.Sign(direction.y);
@@ -226,17 +229,18 @@ public class BallController : MonoBehaviour
         lastVerticalChangeTime = Time.time;
     }
 
-    private Vector3 GetBounceDirection(Collision collision)
+    private Vector3 GetBounceDirection(Collision collision, PaddleController.PaddleType paddleType)
     {
         Vector3 hitPoint = collision.contacts[0].point;
         Vector3 paddleCenter = collision.gameObject.transform.position;
 
-        // Hacer el rebote más sensible a la posición del impacto
         float paddleWidth = collision.collider.bounds.size.x;
         float offsetX = (hitPoint.x - paddleCenter.x) / (paddleWidth * 0.5f);
         float bounceX = offsetX * 1.5f;
         
-        Vector3 bounceDirection = new Vector3(bounceX, 1, 0).normalized;
+        // Dirección del rebote basada en el tipo de paddle
+        float bounceY = (paddleType == PaddleController.PaddleType.Bottom) ? 1 : -1;
+        Vector3 bounceDirection = new Vector3(bounceX, bounceY, 0).normalized;
 
         if (Mathf.Abs(bounceDirection.y) < minBounceAngle)
         {
@@ -252,7 +256,6 @@ public class BallController : MonoBehaviour
         rb.velocity = Vector3.zero;
         transform.position = initialPosition;
         currentSpeed = initialSpeed;
-        LaunchBall();
+        AttachBallToPaddle();
     }
 }
-

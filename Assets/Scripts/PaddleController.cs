@@ -6,7 +6,14 @@ public class PaddleController : MonoBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float speed = 40f;       
     [SerializeField] private float maxX = 7.5f;
-
+    
+    [Header("Paddle Type")]
+    [SerializeField] private PaddleType paddleType = PaddleType.Bottom;
+    
+    [Header("Input Keys")]
+    [SerializeField] private KeyCode moveLeftKey = KeyCode.A;
+    [SerializeField] private KeyCode moveRightKey = KeyCode.D;
+    
     [Header("References")]
     [SerializeField] private BallController ballController;
 
@@ -14,12 +21,20 @@ public class PaddleController : MonoBehaviour
     [SerializeField] private float defaultSize = 1f;
     [SerializeField] private Color defaultColor = Color.white;
     [SerializeField] private float powerUpDuration = 10f;
+    [SerializeField] private AnimationCurve powerUpSizeCurve;
 
     private Renderer paddleRenderer;
     private float currentPowerUpTime;
     private bool isPoweredUp;
 
     public bool canMove = true;
+    
+    // Enum para identificar el tipo de paddle
+    public enum PaddleType
+    {
+        Bottom,
+        Top
+    }
 
     private void Awake()
     {
@@ -29,45 +44,62 @@ public class PaddleController : MonoBehaviour
             Debug.LogError("No se encontró el componente Renderer en el paddle!");
         }
 
+        // Configurar teclas según el tipo de paddle
+        SetupInputKeys();
         ResetPaddleState();
+    }
+
+    private void SetupInputKeys()
+    {
+        switch (paddleType)
+        {
+            case PaddleType.Bottom:
+                moveLeftKey = KeyCode.A;
+                moveRightKey = KeyCode.D;
+                break;
+            case PaddleType.Top:
+                moveLeftKey = KeyCode.LeftArrow;
+                moveRightKey = KeyCode.RightArrow;
+                break;
+        }
     }
 
     private void Update()
     {
-        HandleMovement();
+        if (canMove)
+        {
+            HandleMovement();
+        }
         UpdatePowerUpState();
     }
 
     private void HandleMovement()
     {   
-
-        // Obtener input con soporte para teclado y touch
-        float moveInput = Input.GetAxis("Horizontal");
+        // Movimiento directo basado en input
+        float moveDirection = 0;
         
-        // Soporte para input táctil
-        if (Input.touchCount > 0)
+        if (Input.GetKey(moveLeftKey))
         {
-            Touch touch = Input.GetTouch(0);
-            float screenHalfWidth = Screen.width * 0.5f;
-            moveInput = (touch.position.x > screenHalfWidth) ? 1f : -1f;
+            moveDirection = -1;
+        }
+        else if (Input.GetKey(moveRightKey))
+        {
+            moveDirection = 1;
         }
 
-        // Movimiento directo sin smoothing
-        float move = moveInput * speed * Time.deltaTime;
-        Vector3 newPosition = transform.position + new Vector3(move, 0, 0);
-        newPosition.x = Mathf.Clamp(newPosition.x, -maxX, maxX);
-        transform.position = newPosition;
+        // Aplicar movimiento directo
+        float movement = moveDirection * speed * Time.deltaTime;
+        float newX = Mathf.Clamp(transform.position.x + movement, -maxX, maxX);
+        
+        // Actualizar posición directamente
+        transform.position = new Vector3(newX, transform.position.y, transform.position.z);
     }
 
     public void ApplyPowerUp(float sizeMultiplier, Color newColor, float duration = 0f)
     {
         if (duration <= 0) duration = powerUpDuration;
 
-        transform.localScale = new Vector3(
-            defaultSize * sizeMultiplier, 
-            transform.localScale.y, 
-            transform.localScale.z
-        );
+        StartCoroutine(AnimatePowerUpSize(sizeMultiplier));
         
         paddleRenderer.material.color = newColor;
         currentPowerUpTime = duration;
@@ -85,6 +117,29 @@ public class PaddleController : MonoBehaviour
         OnPowerUpApplied?.Invoke(sizeMultiplier, newColor, duration);
     }
 
+    private System.Collections.IEnumerator AnimatePowerUpSize(float targetSize)
+    {
+        float startSize = transform.localScale.x;
+        float elapsed = 0f;
+        float duration = 0.5f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            
+            if (powerUpSizeCurve != null)
+            {
+                t = powerUpSizeCurve.Evaluate(t);
+            }
+            
+            float currentSize = Mathf.Lerp(startSize, defaultSize * targetSize, t);
+            transform.localScale = new Vector3(currentSize, transform.localScale.y, transform.localScale.z);
+            
+            yield return null;
+        }
+    }
+
     private void UpdatePowerUpState()
     {
         if (!isPoweredUp) return;
@@ -99,7 +154,7 @@ public class PaddleController : MonoBehaviour
 
     private void ResetPaddleState()
     {
-        transform.localScale = new Vector3(defaultSize, transform.localScale.y, transform.localScale.z);
+        StartCoroutine(AnimatePowerUpSize(1f));
         paddleRenderer.material.color = defaultColor;
         isPoweredUp = false;
         currentPowerUpTime = 0;
@@ -112,7 +167,12 @@ public class PaddleController : MonoBehaviour
 
     public void ResetPaddle()
     {
-        transform.position = Vector3.zero;
+        transform.position = new Vector3(0, transform.position.y, 0);
         ResetPaddleState();
+    }
+
+    public PaddleType GetPaddleType()
+    {
+        return paddleType;
     }
 }

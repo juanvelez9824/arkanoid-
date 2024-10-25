@@ -26,6 +26,13 @@ public class Block : MonoBehaviour
         {
             Debug.LogWarning($"[{gameObject.name}] No se encontró el AudioManager");
         }
+
+        // Registrar el bloque con el LevelManager si no es indestructible
+        if (!isIndestructible && LevelManager.Instance != null)
+        {
+            // El tag se necesita para que el LevelManager pueda encontrar los bloques al inicio
+            gameObject.tag = "Block";
+        }
     }
 
     public void OnCollisionEnter(Collision collision)
@@ -86,6 +93,12 @@ public class Block : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.AddScore(points);
+        }
+
+        // Notificar al LevelManager antes de destruir el objeto
+        if (!isIndestructible && LevelManager.Instance != null)
+        {
+            LevelManager.Instance.RemoveBlock(gameObject);
         }
 
         // Esperar un frame para asegurar que el sonido se reproduce

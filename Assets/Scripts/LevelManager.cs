@@ -3,45 +3,148 @@ using System.Collections.Generic;
 
 public class LevelManager : MonoBehaviour
 {
-    [System.Serializable]
-    public class LevelData
+    [Header("Level Settings")]
+    [SerializeField] private float victoryDelay = 0.5f; // Pequeño delay antes de mostrar la victoria
+    
+    private List<GameObject> breakableBlocks;
+    private static LevelManager instance;
+    private bool isLevelCompleted = false;
+
+    public static LevelManager Instance
     {
-        public Vector3[] blockPositions;
-        public int[] blockTypes; // 0 = normal, 1 = resistente
+        get { return instance; }
     }
 
-    [SerializeField] private GameObject[] blockPrefabs;
-    [SerializeField] private LevelData[] levels;
-    private List<GameObject> currentBlocks = new List<GameObject>();
-
-    public void LoadLevel(int levelIndex)
+    private void Awake()
     {
-        ClearLevel();
+        SetupInstance();
+        InitializeLevel();
+    }
+
+    private void SetupInstance()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void InitializeLevel()
+    {
+        breakableBlocks = new List<GameObject>();
+        isLevelCompleted = false;
+    }
+
+    private void Start()
+    {
+        // Encontrar todos los bloques rompibles al inicio del nivel
+        FindAndRegisterBlocks();
+    }
+
+    private void FindAndRegisterBlocks()
+    {
+        GameObject[] blocks = GameObject.FindGameObjectsWithTag("Block");
+        breakableBlocks.AddRange(blocks);
         
-        LevelData level = levels[levelIndex];
-        for (int i = 0; i < level.blockPositions.Length; i++)
+        Debug.Log($"Found {breakableBlocks.Count} breakable blocks in level");
+
+        // Si no hay bloques, loguear una advertencia
+        if (breakableBlocks.Count == 0)
         {
-            GameObject block = Instantiate(
-                blockPrefabs[level.blockTypes[i]],
-                level.blockPositions[i],
-                Quaternion.identity
-            );
-            currentBlocks.Add(block);
+            Debug.LogWarning("No breakable blocks found in level! Make sure blocks are tagged as 'Block'");
         }
     }
 
-    private void ClearLevel()
+    public void RemoveBlock(GameObject block)
     {
-        foreach (GameObject block in currentBlocks)
+        if (!breakableBlocks.Contains(block))
         {
-            if (block != null)
-                Destroy(block);
+            Debug.LogWarning("Attempted to remove non-registered block");
+            return;
         }
-        currentBlocks.Clear();
+
+        breakableBlocks.Remove(block);
+        
+        // Verificar si quedan bloques
+        if (breakableBlocks.Count == 0 && !isLevelCompleted)
+        {
+            OnLevelCompleted();
+        }
+    }
+
+     private void OnLevelCompleted()
+    {
+        if (isLevelCompleted)
+        {
+            Debug.Log("Level already completed, ignoring call");
+            return;
+        }
+        
+        isLevelCompleted = true;
+        Debug.Log("=== Level Completed Called ===");
+
+        if (UIManager.Instance == null)
+        {
+            Debug.LogError("UIManager.Instance is null in OnLevelCompleted!");
+            return;
+        }
+
+        StartCoroutine(ShowVictoryWithDelay());
+    }
+
+     private System.Collections.IEnumerator ShowVictoryWithDelay()
+    {
+        Debug.Log($"Waiting {victoryDelay} seconds before showing victory screen");
+        yield return new WaitForSeconds(victoryDelay);
+        
+        Debug.Log("Victory delay completed, checking references...");
+        
+        if (UIManager.Instance == null)
+        {
+            Debug.LogError("UIManager.Instance is null after delay!");
+            yield break;
+        }
+
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("GameManager.Instance is null!");
+            yield break;
+        }
+
+        int currentLevel = GameManager.Instance.GetCurrentLevel();
+        Debug.Log($"Showing victory screen for level {currentLevel}");
+        UIManager.Instance.ShowVictoryScreen(currentLevel);
+    }
+
+    // Métodos públicos para acceder al estado del nivel
+    public int GetRemainingBlocks()
+    {
+        return breakableBlocks.Count;
     }
 
     public bool IsLevelComplete()
     {
-        return currentBlocks.Count == 0;
+        return isLevelCompleted;
+    }
+
+    // Método para reiniciar el estado del nivel si es necesario
+    public void ResetLevel()
+    {
+        breakableBlocks.Clear();
+        isLevelCompleted = false;
+        FindAndRegisterBlocks();
+    }
+
+    private void OnDisable()
+    {
+        // Limpiar la lista cuando se desactiva el componente
+        if (breakableBlocks != null)
+        {
+            breakableBlocks.Clear();
+        }
     }
 }

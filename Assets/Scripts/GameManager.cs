@@ -15,17 +15,74 @@ public class GameManager : MonoBehaviour
     public event Action<int> OnScoreChanged;
     public event Action<int> OnLivesChanged;
     public event Action OnGameOver;
-    private int currentLevel;
+    
     public event Action OnGameRestart;
      public event Action<int> OnLevelChanged;
-    
+
+
+    private int currentLevel;
     private int currentScore;
     private int currentLives;
     private bool isGameOver;
+    private bool isPaused;
 
     private void Awake()
     {
         SetupInstance();
+        InitializeGameState();
+    }
+
+     private void InitializeGameState()
+    {
+        currentScore = 0;
+        currentLives = startingLives;
+        currentLevel = 1;
+        isGameOver = false;
+        isPaused = false;
+        Time.timeScale = 1f;
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Debug.Log($"Scene loaded: {scene.name}");
+        UpdateUIState();
+        
+        // Si estamos en el menú principal, asegurarnos que el tiempo corre
+        if (scene.name == "MainMenu")
+        {
+            Time.timeScale = 1f;
+            isPaused = false;
+        }
+       
+    }
+    private void UpdateUIState()
+    {
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateScoreUI(currentScore);
+            UIManager.Instance.UpdateLivesUI(currentLives);
+            UIManager.Instance.UpdateCurrentLevelUI(currentLevel);
+            
+            // Asegurarse de que el menú de pausa esté en el estado correcto
+            if (isPaused)
+            {
+                UIManager.Instance.ShowPauseMenu();
+            }
+            else
+            {
+                UIManager.Instance.HidePauseMenu();
+            }
+        }
     }
 
     private void Update()
@@ -42,10 +99,63 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            Debug.Log("GameManager instance created");
         }
         else
         {
             Destroy(gameObject);
+            Debug.Log("Duplicate GameManager destroyed");
+        }
+    }
+
+    public void RestartGame()
+    {
+        Debug.Log("RestartGame called");
+        
+        // Reiniciar variables
+        currentScore = 0;
+        currentLives = startingLives;
+        isGameOver = false;
+        isPaused = false;
+        Time.timeScale = 1f;
+        
+        // Notificar a los observadores
+        OnGameRestart?.Invoke();
+        OnScoreChanged?.Invoke(currentScore);
+        OnLivesChanged?.Invoke(currentLives);
+        
+        // Cargar el nivel actual o el primero si no hay nivel válido
+        if (currentLevel > 0 && currentLevel <= levelScenes.Length)
+        {
+            Debug.Log($"Loading level scene: {levelScenes[currentLevel - 1]}");
+            SceneManager.LoadScene(levelScenes[currentLevel - 1]);
+        }
+        else
+        {
+            Debug.Log("Resetting to first level");
+            currentLevel = 1;
+            if (levelScenes.Length > 0)
+            {
+                SceneManager.LoadScene(levelScenes[0]);
+            }
+            else
+            {
+                Debug.LogError("No level scenes configured in GameManager!");
+            }
+        }
+        
+        OnLevelChanged?.Invoke(currentLevel);
+        
+        // Actualizar UI
+        if (UIManager.Instance != null)
+        {
+            UIManager.Instance.UpdateScoreUI(currentScore);
+            UIManager.Instance.UpdateLivesUI(currentLives);
+            UIManager.Instance.UpdateCurrentLevelUI(currentLevel);
+        }
+        else
+        {
+            Debug.LogWarning("UIManager instance not found during restart");
         }
     }
 
@@ -98,35 +208,65 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Game Over! Final Score: {currentScore}");
     }
 
-    public void RestartGame()
-    {
-        Debug.Log("Restarting game");
-        OnGameRestart?.Invoke();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
+    
 
     public void LoadMainMenu()
     {
-        Debug.Log("Loading main menu");
+        Debug.Log("LoadMainMenu called");
+        
+        // Resetear el estado del juego
         Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        isPaused = false;
+        isGameOver = false;
+        currentScore = 0;
+        currentLives = startingLives; 
+        
+        try 
+        {
+            SceneManager.LoadScene("MainMenu");
+            Debug.Log("MainMenu scene loaded successfully");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Failed to load MainMenu scene: {e.Message}");
+            Debug.LogError("Make sure 'MainMenu' scene is in Build Settings!");
+        }
+    }
+
+    public int GetCurrentLevel()
+    {
+        return currentLevel;
     }
 
     private void TogglePause()
     {
-        bool isPaused = Time.timeScale == 0f;
-        Time.timeScale = isPaused ? 1f : 0f;
+        isPaused = !isPaused;
+        Time.timeScale = isPaused ? 0f : 1f;
         
         if (UIManager.Instance != null)
         {
-            if (isPaused)
+            try
             {
-                UIManager.Instance.HidePauseMenu();
+                if (isPaused)
+                {
+                    UIManager.Instance.ShowPauseMenu();
+                }
+                else
+                {
+                    UIManager.Instance.HidePauseMenu();
+                }
             }
-            else
+            catch (System.NullReferenceException e)
             {
-                UIManager.Instance.ShowPauseMenu();
+                Debug.LogWarning($"UI Reference lost during pause toggle: {e.Message}");
+                // Revertir el estado de pausa si falló
+                isPaused = !isPaused;
+                Time.timeScale = isPaused ? 0f : 1f;
             }
+        }
+        else
+        {
+            Debug.LogWarning("UIManager.Instance is null during pause toggle");
         }
     }
 
@@ -154,13 +294,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError($"Invalid level number: {level}");
             return;
-        }
-
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.UpdateScoreUI(currentScore);
-            UIManager.Instance.UpdateLivesUI(currentLives);
-            UIManager.Instance.UpdateCurrentLevelUI(currentLevel);
         }
         
         OnScoreChanged?.Invoke(currentScore);
@@ -194,4 +327,6 @@ public class GameManager : MonoBehaviour
 
     public int GetCurrentScore() => currentScore;
     public int GetCurrentLives() => currentLives;
+    public bool IsGamePaused() => isPaused;
+    
 }
