@@ -115,6 +115,18 @@ MonoBehaviour:
   damagedColor: {r: 0.9245283, g: 0.8503916, b: 0.8503916, a: 0}
   points: 100
   isIndestructible: 0
+  flickerDuration: 0.3
+  flickerCount: 3
+  flickerColor: {r: 1, g: 1, b: 1, a: 1}
+  shatterPieces: 8
+  explosionForce: 300
+  explosionRadius: 2
+  pieceDestroyDelay: 2
+  shatterPiecePrefab: {fileID: 596912663028105187, guid: 7fb1d6535efc5e44bbbfb26f6501adcf, type: 3}
+  shatterMaterial: {fileID: 2100000, guid: abe1188e6473f1146b952ee26d65bb28, type: 2}
+  containsPowerUp: 1
+  powerUpPrefab: {fileID: 1723414212864970379, guid: 5c809cea58c95f44e812dd00634eb680, type: 3}
+  powerUpType: 1
 --- !u!54 &1138208901986029079
 Rigidbody:
   m_ObjectHideFlags: 0

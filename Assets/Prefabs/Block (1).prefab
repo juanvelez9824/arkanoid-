@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 12a81f093d980b44981805d92aab7dad, type: 2}
+  - {fileID: 2100000, guid: dc94df0fdde14c744ac94c8ea116bcd1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -128,6 +128,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   hitPoints: 1
-  damagedColor: {r: 0.9339623, g: 0.90938437, b: 0.7004717, a: 0}
+  damagedColor: {r: 0.9245283, g: 0.8806228, b: 0.49279103, a: 0}
   points: 100
   isIndestructible: 0
+  flickerDuration: 0.3
+  flickerCount: 3
+  flickerColor: {r: 1, g: 1, b: 1, a: 1}
+  shatterPieces: 8
+  explosionForce: 300
+  explosionRadius: 2
+  pieceDestroyDelay: 2
+  shatterPiecePrefab: {fileID: 7756267845858948182, guid: 6d3d5aa28ffc567468878de1b8c261ab, type: 3}
+  shatterMaterial: {fileID: 2100000, guid: 26abbf6f891ba9f45b416d61ea633e3c, type: 2}
+  containsPowerUp: 1
+  powerUpPrefab: {fileID: 7322655707278472044, guid: e740ac3ca43868e42a6062a1e9119b3f, type: 3}
+  powerUpType: 0

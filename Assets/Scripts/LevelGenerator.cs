@@ -10,6 +10,7 @@ public class LevelGenerator : MonoBehaviour
         public float probability = 1f; // Probabilidad de aparición de este tipo de bloque
         public int points = 100; // Puntos por destruir este bloque
         public bool isIndestructible = false;
+        public float powerUpDropChance = 0.2f;
     }
 
     [System.Serializable]
@@ -33,6 +34,14 @@ public class LevelGenerator : MonoBehaviour
     public Transform boundaryFrame; // Referencia al objeto que define el área de juego
     public bool showBoundaryGizmos = true; // Para visualizar el área en el editor
     
+    [System.Serializable]
+    public class PowerUpSettings
+    {
+        public GameObject powerUpPrefab;
+        public PowerUpType type;
+        public float spawnProbability = 1f;
+    }
+    
     [Header("Dimensiones")]
     public int minRows = 3;
     public int maxRows = 6;
@@ -41,6 +50,11 @@ public class LevelGenerator : MonoBehaviour
     public float blockWidth = 1.5f;
     public float blockHeight = 0.5f;
     public float spacing = 0.1f; // Espacio entre bloques
+
+    [Header("Power-Ups")]
+    public PowerUpSettings[] availablePowerUps;
+    public float globalPowerUpChance = 0.3f; // Probabilidad global de que aparezca un power-up
+    public float minPowerUpSpawnHeight = 2f;
     
     [Header("Configuración")]
     public float emptySpaceProbability = 0.1f;
@@ -148,7 +162,7 @@ public class LevelGenerator : MonoBehaviour
         {
             // Reducir probabilidad de espacios vacíos con cada nivel
             emptySpaceProbability = Mathf.Max(0.05f, emptySpaceProbability - (0.01f * currentLevel));
-            
+            globalPowerUpChance = Mathf.Max(0.1f, globalPowerUpChance - (0.02f * currentLevel));
             // Aumentar probabilidad de bloques más resistentes
             foreach (BlockType block in blockTypes)
             {
@@ -157,7 +171,30 @@ public class LevelGenerator : MonoBehaviour
                     block.probability = Mathf.Min(0.3f, block.probability + (0.02f * currentLevel));
                 }
             }
-        }
+       
+              if (availablePowerUps != null)
+            {
+                foreach (PowerUpSettings powerUp in availablePowerUps)
+                {
+                    switch (powerUp.type)
+                    {
+                        case PowerUpType.ExplodingBlocks:
+                        case PowerUpType.ExtraLife:
+                            // Power-ups más poderosos son más raros pero aumentan con el nivel
+                            powerUp.spawnProbability = Mathf.Min(1f, powerUp.spawnProbability + (0.05f * currentLevel));
+                            break;
+                        default:
+                            // Power-ups básicos mantienen probabilidad constante
+                            break;
+                    }
+                }
+       
+       
+       
+       
+       
+       
+             } }
     }
 
     private bool[,] GenerateLevelMatrix()
@@ -332,12 +369,61 @@ public class LevelGenerator : MonoBehaviour
                             {
                                 blockComponent.points = selectedBlock.points;
                                 blockComponent.isIndestructible = selectedBlock.isIndestructible;
+
+                                // Configurar el power-up para este bloque
+                                SetupBlockPowerUp(blockComponent, selectedBlock, position);
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+     private void SetupBlockPowerUp(Block block, BlockType blockType, Vector3 position)
+    {
+        // Solo considerar power-ups si el bloque está por encima de la altura mínima
+        if (position.y < boundaryBounds.min.y + minPowerUpSpawnHeight)
+            return;
+
+        // Verificar si este bloque debería tener un power-up
+        if (Random.value < globalPowerUpChance * blockType.powerUpDropChance)
+        {
+            PowerUpSettings selectedPowerUp = SelectPowerUp();
+            if (selectedPowerUp != null)
+            {
+                // Guardar la información del power-up en el componente Block
+                block.containsPowerUp = true;
+                block.powerUpPrefab = selectedPowerUp.powerUpPrefab;
+                block.powerUpType = selectedPowerUp.type;
+            }
+        }
+    }
+
+     private PowerUpSettings SelectPowerUp()
+    {
+        if (availablePowerUps == null || availablePowerUps.Length == 0)
+            return null;
+
+        float totalProbability = 0;
+        foreach (PowerUpSettings powerUp in availablePowerUps)
+        {
+            totalProbability += powerUp.spawnProbability;
+        }
+
+        float random = Random.Range(0, totalProbability);
+        float currentProbability = 0;
+
+        foreach (PowerUpSettings powerUp in availablePowerUps)
+        {
+            currentProbability += powerUp.spawnProbability;
+            if (random <= currentProbability)
+            {
+                return powerUp;
+            }
+        }
+
+        return availablePowerUps[0];
     }
 
     private bool IsPositionWithinBounds(Vector3 position)

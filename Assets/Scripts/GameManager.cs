@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 [DefaultExecutionOrder(0)]
 public class GameManager : MonoBehaviour
@@ -11,6 +13,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int startingLives = 3;
     [SerializeField] private KeyCode pauseKey = KeyCode.P;
     [SerializeField] private string[] levelScenes;
+
+    [Header("Power-Up Settings")]
+    [SerializeField] private float powerUpDuration = 10f;
+    
+    public event Action<PowerUpType> OnPowerUpCollected;
+    public event Action<PowerUpType> OnPowerUpExpired;
+
+    private bool isPaddlePowerUpActive;
+    private float paddlePowerUpTimeRemaining;
+
     
     public event Action<int> OnScoreChanged;
     public event Action<int> OnLivesChanged;
@@ -108,6 +120,77 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void AddLife()
+    {
+        if (isGameOver) return;
+
+        currentLives++;
+        UIManager.Instance?.UpdateLivesUI(currentLives);
+        OnLivesChanged?.Invoke(currentLives);
+    }
+
+    public void ActivatePowerUp(PowerUpType type)
+    {
+        OnPowerUpCollected?.Invoke(type);
+        
+        switch (type)
+        {
+            case PowerUpType.PaddleSize:
+                StartCoroutine(HandlePaddlePowerUpDuration());
+                break;
+            case PowerUpType.BallSpeed:
+                // La lógica está en el PowerUp script
+                break;
+            case PowerUpType.ExtraLife:
+                AddLife();
+                break;
+            case PowerUpType.ExplodingBlocks:
+                // La lógica está en el PowerUp script
+                break;
+        }
+    }
+    private IEnumerator HandlePaddlePowerUpDuration()
+    {
+        isPaddlePowerUpActive = true;
+        paddlePowerUpTimeRemaining = powerUpDuration;
+
+        while (paddlePowerUpTimeRemaining > 0)
+        {
+            if (!isPaused)
+            {
+                paddlePowerUpTimeRemaining -= Time.deltaTime;
+            }
+            yield return null;
+        }
+
+        isPaddlePowerUpActive = false;
+        OnPowerUpExpired?.Invoke(PowerUpType.PaddleSize);
+    }
+
+    // Método para verificar si un power-up está activo
+    public bool IsPowerUpActive(PowerUpType type)
+    {
+        switch (type)
+        {
+            case PowerUpType.PaddleSize:
+                return isPaddlePowerUpActive;
+            default:
+                return false;
+        }
+    }
+
+    // Método para obtener el tiempo restante de un power-up
+    public float GetPowerUpTimeRemaining(PowerUpType type)
+    {
+        switch (type)
+        {
+            case PowerUpType.PaddleSize:
+                return isPaddlePowerUpActive ? paddlePowerUpTimeRemaining : 0f;
+            default:
+                return 0f;
+        }
+    }
+
     public void RestartGame()
     {
         Debug.Log("RestartGame called");
@@ -118,6 +201,9 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         isPaused = false;
         Time.timeScale = 1f;
+        isPaddlePowerUpActive = false;
+        paddlePowerUpTimeRemaining = 0f;
+        StopAllCoroutines(); // Detener cualquier power-up activo
         
         // Notificar a los observadores
         OnGameRestart?.Invoke();
@@ -157,7 +243,12 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogWarning("UIManager instance not found during restart");
         }
+
+
+
     }
+
+    
 
     public void InitializeGame()
     {
@@ -176,6 +267,10 @@ public class GameManager : MonoBehaviour
         OnScoreChanged?.Invoke(currentScore);
         OnLivesChanged?.Invoke(currentLives);
     }
+
+   
+
+    
 
     public void AddScore(int points)
     {

@@ -49,16 +49,21 @@ MonoBehaviour:
     probability: 4
     points: 2
     isIndestructible: 0
+    powerUpDropChance: 0.2
   - prefab: {fileID: 5634507069792997750, guid: 144cc9164648afe4aa0d84eebfc48e04, type: 3}
     probability: 2
     points: 1
     isIndestructible: 0
+    powerUpDropChance: 0.2
   - prefab: {fileID: 2788922083553178217, guid: 53598891bbad7a44abb7e80beea0d612, type: 3}
     probability: 2
     points: 5
     isIndestructible: 0
+    powerUpDropChance: 0.2
   pattern: 0
   randomizePattern: 1
+  boundaryFrame: {fileID: 0}
+  showBoundaryGizmos: 1
   minRows: 6
   maxRows: 12
   minColumns: 5
@@ -66,7 +71,21 @@ MonoBehaviour:
   blockWidth: 1.5
   blockHeight: 0.8
   spacing: 0.1
-  startPos: {x: -7, y: 4}
+  availablePowerUps:
+  - powerUpPrefab: {fileID: 7322655707278472044, guid: e740ac3ca43868e42a6062a1e9119b3f, type: 3}
+    type: 0
+    spawnProbability: 0.2
+  - powerUpPrefab: {fileID: 1723414212864970379, guid: 5c809cea58c95f44e812dd00634eb680, type: 3}
+    type: 1
+    spawnProbability: 0.1
+  - powerUpPrefab: {fileID: 6024681473852136420, guid: e6a61114b0d7bf1419497a928bf48c4d, type: 3}
+    type: 2
+    spawnProbability: 0.1
+  - powerUpPrefab: {fileID: 6233929913671949852, guid: a3ea999ff098ec0458e6c1b518775647, type: 3}
+    type: 3
+    spawnProbability: 0.1
+  globalPowerUpChance: 0.3
+  minPowerUpSpawnHeight: 2
   emptySpaceProbability: 0.1
   increaseDifficultyWithLevel: 1
   difficultyMultiplier: 1.1

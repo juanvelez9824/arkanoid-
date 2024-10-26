@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3778763506212565530}
   - component: {fileID: 3881672926610806826}
   - component: {fileID: 1665424165564355518}
+  - component: {fileID: -2689089648360429452}
   m_Layer: 0
   m_Name: Block (2)
   m_TagString: Block
@@ -64,7 +65,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: be8cdb09f44a75b44828050ef777120b, type: 2}
+  - {fileID: 2100000, guid: 3bd29fb76fd8e2a48876709c42ab0cb2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -131,3 +132,34 @@ MonoBehaviour:
   damagedColor: {r: 0.6963332, g: 0.9056604, b: 0.76983744, a: 0}
   points: 100
   isIndestructible: 0
+  flickerDuration: 0.3
+  flickerCount: 3
+  flickerColor: {r: 1, g: 1, b: 1, a: 1}
+  shatterPieces: 8
+  explosionForce: 300
+  explosionRadius: 2
+  pieceDestroyDelay: 2
+  shatterPiecePrefab: {fileID: 6024681473852136420, guid: e6a61114b0d7bf1419497a928bf48c4d, type: 3}
+  shatterMaterial: {fileID: 2100000, guid: abe1188e6473f1146b952ee26d65bb28, type: 2}
+  containsPowerUp: 1
+  powerUpPrefab: {fileID: 6024681473852136420, guid: e6a61114b0d7bf1419497a928bf48c4d, type: 3}
+  powerUpType: 2
+--- !u!114 &-2689089648360429452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2788922083553178217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceadaf70868caa44d8b25ef87111f0db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainColor: {r: 1, g: 1, b: 1, a: 1}
+  emissionColor: {r: 0, g: 1, b: 1, a: 1}
+  emissionIntensity: 2
+  enablePulse: 1
+  pulseSpeed: 2
+  minIntensity: 1
+  maxIntensity: 3

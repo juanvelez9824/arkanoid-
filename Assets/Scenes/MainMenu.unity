@@ -157,6 +157,7 @@ MonoBehaviour:
   - Level1
   - Level2
   - Level3
+  powerUpDuration: 10
 --- !u!4 &69933746
 Transform:
   m_ObjectHideFlags: 0
@@ -458,6 +459,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2571049919968194859, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 40
+      objectReference: {fileID: 0}
     - target: {fileID: 4760633956281500622, guid: e4b2082bf737faf449bd86233600378e, type: 3}
       propertyPath: m_Name
       value: Canvas (1)
@@ -544,6 +549,26 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4760633956281500626, guid: e4b2082bf737faf449bd86233600378e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5221420303057772373, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_margin.w
+      value: -119.03675
+      objectReference: {fileID: 0}
+    - target: {fileID: 5221420303057772373, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_margin.x
+      value: -792.12646
+      objectReference: {fileID: 0}
+    - target: {fileID: 5221420303057772373, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_margin.y
+      value: -212.21487
+      objectReference: {fileID: 0}
+    - target: {fileID: 5221420303057772373, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_margin.z
+      value: -723.6374
+      objectReference: {fileID: 0}
+    - target: {fileID: 6157241214943525710, guid: e4b2082bf737faf449bd86233600378e, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
