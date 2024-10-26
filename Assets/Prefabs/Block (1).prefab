@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6698307210480439557}
   - component: {fileID: 6727128238125939509}
   - component: {fileID: 303911374116621642}
+  - component: {fileID: 955043354367974605}
   m_Layer: 0
   m_Name: Block (1)
   m_TagString: Block
@@ -140,6 +141,28 @@ MonoBehaviour:
   pieceDestroyDelay: 2
   shatterPiecePrefab: {fileID: 7756267845858948182, guid: 6d3d5aa28ffc567468878de1b8c261ab, type: 3}
   shatterMaterial: {fileID: 2100000, guid: 26abbf6f891ba9f45b416d61ea633e3c, type: 2}
+  emissionColor: {r: 0, g: 1, b: 1, a: 1}
+  emissionIntensity: 2
+  enablePulse: 1
+  pulseSpeed: 2
+  minEmissionIntensity: 1
+  maxEmissionIntensity: 3
   containsPowerUp: 1
   powerUpPrefab: {fileID: 7322655707278472044, guid: e740ac3ca43868e42a6062a1e9119b3f, type: 3}
   powerUpType: 0
+--- !u!114 &955043354367974605
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5634507069792997750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86f259300598dd843b884fdea6f63d7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  floatSpeed: 1
+  floatHeight: 0.1
+  rotationSpeed: 3
+  useRandomOffset: 1

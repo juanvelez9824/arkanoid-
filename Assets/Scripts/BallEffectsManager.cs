@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class BallEffectsManager : MonoBehaviour 
 {
-     [Header("Referencias de Sistemas de Partículas")]
+
+
+    [Header("Referencias de Sistemas de Partículas")]
     [SerializeField] public ParticleSystem collisionEffect;
     [SerializeField] public ParticleSystem trailEffect;
     [SerializeField] public ParticleSystem powerUpEffect;
@@ -199,5 +201,6 @@ public enum CollisionType
 {
     Paddle,
     Wall,
-    Block
+    Block,
+    TopBoundary
 }

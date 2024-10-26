@@ -33,7 +33,15 @@ public class BallController : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject bottomPaddle;
     [SerializeField] private GameObject topPaddle;
-    
+
+    [Header("Wall Collision Settings")]
+    [SerializeField] private bool shouldBounceTopBoundary = false;
+    [SerializeField] private string topBoundaryTag = "TopBoundary";
+    [SerializeField] private float wallBounceRandomness = 0.1f;
+    [SerializeField] private float sideWallMinBounceAngle = 0.2f;
+    [SerializeField] private float wallSpeedVariation = 0.05f;
+    [SerializeField] private bool applySpeedVariationOnWallHit = true;
+
     // Components
     private Rigidbody rb;
     private Vector3 initialPosition;
@@ -202,18 +210,47 @@ public class BallController : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {   
         if (isAttachedToPaddle) return;
+
+        bool isTopBoundary = collision.gameObject.CompareTag(topBoundaryTag);
+        bool isWall = collision.gameObject.CompareTag("Wall");
+        
         
         if (collision.gameObject.CompareTag("Paddle"))
         {
             HandlePaddleCollision(collision);
         }
+
+         else if (isWall || isTopBoundary)
+        {
+            // Verificar si debemos procesar la colisión con el límite superior
+            if (!isTopBoundary || shouldBounceTopBoundary)
+            {
+                HandleWallCollision(collision);
+            }
+            else
+            {
+                // Ignorar la colisión con el límite superior si no debe rebotar
+                Physics.IgnoreCollision(collision.collider, GetComponent<Collider>());
+                return;
+            }
+        }
         else if (collision.gameObject.CompareTag("Wall"))
         {
-            HandleWallCollision(collision);
+            if (!collision.gameObject.CompareTag(topBoundaryTag) || shouldBounceTopBoundary)
+            {
+                HandleWallCollision(collision);
+            }
         }
         else if (collision.gameObject.CompareTag("Block"))
         {
             HandleBlockCollision(collision);
+        }
+
+        else if (collision.gameObject.CompareTag(topBoundaryTag) && !shouldBounceTopBoundary)
+        {
+            // Si golpea el límite superior y no debe rebotar, ignorar la colisión
+            Physics.IgnoreCollision(collision.collider, GetComponent<Collider>());
+            return;
         }
 
         currentSpeed = Mathf.Clamp(rb.velocity.magnitude, minSpeed, maxSpeed);
@@ -244,32 +281,74 @@ public class BallController : MonoBehaviour
 
     private void HandleWallCollision(Collision collision)
     {
-        Vector3 normal = collision.contacts[0].normal;
-        Vector3 direction = Vector3.Reflect(rb.velocity.normalized, normal);
+        // Obtener información de la colisión
+        ContactPoint contact = collision.contacts[0];
+        Vector3 normal = contact.normal;
         
-        direction += new Vector3(
-            Random.Range(-0.1f, 0.1f),
-            Random.Range(-0.1f, 0.1f),
-            0
-        ).normalized;
+        // Determinar si es una pared lateral o límite superior/inferior
+        bool isVerticalWall = Mathf.Abs(normal.x) > Mathf.Abs(normal.y);
+        bool isTopBoundary = collision.gameObject.CompareTag(topBoundaryTag);
         
-        if (Mathf.Abs(direction.y) < minBounceAngle)
+        // Calcular dirección base del rebote
+        Vector3 incomingVelocity = rb.velocity.normalized;
+        Vector3 bounceDirection = Vector3.Reflect(incomingVelocity, normal);
+        
+        // Aplicar variaciones solo para paredes laterales
+        if (isVerticalWall)
         {
-            direction.y = minBounceAngle * Mathf.Sign(direction.y);
-            direction = direction.normalized;
+            // Añadir aleatoriedad al rebote
+            bounceDirection += new Vector3(
+                Random.Range(-wallBounceRandomness, wallBounceRandomness),
+                Random.Range(-wallBounceRandomness, wallBounceRandomness),
+                0
+            );
+            
+            // Normalizar la dirección
+            bounceDirection = bounceDirection.normalized;
+            
+            // Asegurar ángulo mínimo de rebote para paredes laterales
+            if (Mathf.Abs(bounceDirection.y) < sideWallMinBounceAngle)
+            {
+                bounceDirection.y = sideWallMinBounceAngle * Mathf.Sign(bounceDirection.y);
+                bounceDirection = bounceDirection.normalized;
+            }
+            
+            // Aplicar variación de velocidad si está configurado
+            if (applySpeedVariationOnWallHit)
+            {
+                float speedMultiplier = 1f + Random.Range(-wallSpeedVariation, wallSpeedVariation);
+                currentSpeed = Mathf.Clamp(currentSpeed * speedMultiplier, minSpeed, maxSpeed);
+            }
         }
         
-        rb.velocity = direction * currentSpeed;
+        // Aplicar la velocidad resultante
+        rb.velocity = bounceDirection * currentSpeed;
         
-        if (Mathf.Abs(direction.y) >= minYVelocity)
+        // Actualizar tiempo de cambio vertical si es necesario
+        if (Mathf.Abs(bounceDirection.y) >= minYVelocity)
         {
             lastVerticalChangeTime = Time.time;
         }
         
+        // Efectos visuales de la colisión
         if (effectsManager != null)
         {
-            effectsManager.PlayCollisionEffect(collision.contacts[0].point, CollisionType.Wall);
+            // Determinar el tipo de efecto basado en el tipo de pared
+            CollisionType collisionType = isTopBoundary ? 
+                CollisionType.TopBoundary : CollisionType.Wall;
+                
+            effectsManager.PlayCollisionEffect(contact.point, collisionType);
         }
+        
+        // Sacudir la cámara con menor intensidad que otros tipos de colisión
+        float shakeIntensityMultiplier = isVerticalWall ? 0.5f : 0.3f;
+        StartCoroutine(ShakeScreen(shakeIntensity * shakeIntensityMultiplier, shakeDuration));
+        
+        // Debug visual para desarrollo
+        #if UNITY_EDITOR
+        Debug.DrawRay(contact.point, bounceDirection * 2f, Color.green, 1f);
+        Debug.DrawRay(contact.point, normal, Color.blue, 1f);
+        #endif
     }
 
     private void HandleBlockCollision(Collision collision)
@@ -419,6 +498,8 @@ public class BallController : MonoBehaviour
     {
         return isPowerUpActive;
     }
+
+     
 
     public void OnDestroy()
     {
