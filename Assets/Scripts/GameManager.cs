@@ -30,6 +30,7 @@ public class GameManager : MonoBehaviour
     
     public event Action OnGameRestart;
      public event Action<int> OnLevelChanged;
+     public event Action OnVictory;
 
 
     private int currentLevel;
@@ -297,10 +298,21 @@ public class GameManager : MonoBehaviour
 
     private void GameOver()
     {
-        isGameOver = true;
-        OnGameOver?.Invoke();
-        UIManager.Instance?.ShowGameOver(currentScore);
-        Debug.Log($"Game Over! Final Score: {currentScore}");
+        if (!isGameOver) // Evita que se llame múltiples veces
+        {
+            isGameOver = true;
+            OnGameOver?.Invoke();
+            
+            // Solo reproducir el sonido de game over si no es una victoria
+            if (currentLevel < levelScenes.Length)
+            {
+                AudioManager.Instance?.PlayGameOverSound();
+            }
+            
+            UIManager.Instance?.ShowGameOver(currentScore);
+            Debug.Log($"Game Over! Final Score: {currentScore}");
+        }
+
     }
 
     
@@ -315,6 +327,8 @@ public class GameManager : MonoBehaviour
         isGameOver = false;
         currentScore = 0;
         currentLives = startingLives; 
+
+        SceneLoadingManager.Instance?.LoadSceneAsync("MainMenu");
         
         try 
         {
@@ -383,7 +397,7 @@ public class GameManager : MonoBehaviour
         // Load the corresponding level scene
         if (level > 0 && level <= levelScenes.Length)
         {
-            SceneManager.LoadScene(levelScenes[level - 1]);
+           SceneLoadingManager.Instance?.LoadSceneAsync(levelScenes[level - 1]);
         }
         else
         {
@@ -395,6 +409,26 @@ public class GameManager : MonoBehaviour
         OnLivesChanged?.Invoke(currentLives);
         OnLevelChanged?.Invoke(currentLevel);
     }
+
+    
+    private void Victory()
+    {
+        Debug.Log("Victory achieved!");
+        isGameOver = true;
+        OnVictory?.Invoke();
+        AudioManager.Instance?.PlayVictorySound();
+        
+        // Esperar antes de mostrar la pantalla de game over
+        StartCoroutine(DelayedGameOverAfterVictory());
+    }
+
+    private IEnumerator DelayedGameOverAfterVictory()
+    {
+        yield return new WaitForSeconds(3f); // Ajusta este tiempo según la duración de tu sonido de victoria
+        UIManager.Instance?.ShowGameOver(currentScore);
+    }
+
+
 
     public void LoadNextLevel()
     {
@@ -412,13 +446,17 @@ public class GameManager : MonoBehaviour
             
             SceneManager.LoadScene(levelScenes[currentLevel - 1]);
             OnLevelChanged?.Invoke(currentLevel);
+             AudioManager.Instance?.PlayVictorySound();
         }
         else
-        {
-            // Player has completed all levels
-            GameOver();
+        {   
+           
+            
+           Victory();
         }
     }
+
+    
 
     public int GetCurrentScore() => currentScore;
     public int GetCurrentLives() => currentLives;

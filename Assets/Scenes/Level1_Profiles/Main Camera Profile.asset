@@ -60,15 +60,15 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: 2
+    value: 3
   threshold:
     overrideState: 1
-    value: 1
+    value: 1.2
   softKnee:
     overrideState: 0
     value: 0.5
   clamp:
-    overrideState: 0
+    overrideState: 1
     value: 65472
   diffusion:
     overrideState: 0
@@ -87,8 +87,8 @@ MonoBehaviour:
     value: {fileID: 0}
     defaultState: 1
   dirtIntensity:
-    overrideState: 0
-    value: 0
+    overrideState: 1
+    value: 1
 --- !u!114 &8939883870554061053
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -107,10 +107,10 @@ MonoBehaviour:
     value: 1
   mode:
     overrideState: 1
-    value: 1
+    value: 0
   color:
-    overrideState: 1
-    value: {r: 0.15869714, g: 0.10034712, b: 0.38679248, a: 1}
+    overrideState: 0
+    value: {r: 0.49345985, g: 0.42475083, b: 0.7830189, a: 1}
   center:
     overrideState: 0
     value: {x: 0.5, y: 0.5}
@@ -127,7 +127,7 @@ MonoBehaviour:
     overrideState: 0
     value: 0
   mask:
-    overrideState: 1
+    overrideState: 0
     value: {fileID: 0}
     defaultState: 1
   opacity:

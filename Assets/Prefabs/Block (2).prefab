@@ -183,6 +183,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floatSpeed: 1
-  floatHeight: 0.1
-  rotationSpeed: 0.5
+  floatHeight: 0.4
+  rotationSpeed: 0.8
   useRandomOffset: 1

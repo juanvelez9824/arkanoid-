@@ -163,6 +163,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   floatSpeed: 1
-  floatHeight: 0.1
+  floatHeight: 2
   rotationSpeed: 5
   useRandomOffset: 1

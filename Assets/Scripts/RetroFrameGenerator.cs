@@ -1,5 +1,9 @@
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [ExecuteInEditMode]
 public class RetroFrameGenerator : MonoBehaviour
 {
@@ -15,17 +19,56 @@ public class RetroFrameGenerator : MonoBehaviour
     
     [Header("Game Area")]
     [SerializeField] private Vector2 gameAreaSize = new Vector2(10f, 15f);
-    
-    private GameObject[] frameParts;
-    
+
+    // Referencia a los objetos generados
+    private GameObject frameContainer;
+
+    private void OnEnable()
+    {
+        #if UNITY_EDITOR
+        // Solo generar en el editor si no es una instancia de prefab
+        if (!PrefabUtility.IsPartOfPrefabInstance(gameObject))
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null && gameObject != null)
+                {
+                    GenerateFrame();
+                }
+            };
+        }
+        #endif
+    }
+
+    #if UNITY_EDITOR
     void OnValidate()
     {
-        GenerateFrame();
+        // No ejecutar si es parte de un prefab
+        if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+            return;
+
+        if (!gameObject.activeInHierarchy) 
+            return;
+
+        EditorApplication.delayCall += () =>
+        {
+            if (this != null && gameObject != null)
+            {
+                GenerateFrame();
+            }
+        };
     }
-    
+    #endif
+
     public void GenerateFrame()
     {
-        CleanupOldFrame();
+        // Si es una instancia de prefab, no regenerar
+        #if UNITY_EDITOR
+        if (PrefabUtility.IsPartOfPrefabInstance(gameObject))
+            return;
+        #endif
+
+        EnsureContainer();
         CreateFrameParts();
         CreateCorners();
         if (addBevelEffect)
@@ -33,18 +76,29 @@ public class RetroFrameGenerator : MonoBehaviour
             AddBevelToFrame();
         }
     }
-    
-    void CleanupOldFrame()
+
+    void EnsureContainer()
     {
-        while (transform.childCount > 0)
+        // Limpiar el contenedor anterior si existe
+        if (frameContainer != null)
         {
-            DestroyImmediate(transform.GetChild(0).gameObject);
+            #if UNITY_EDITOR
+            DestroyImmediate(frameContainer);
+            #else
+            Destroy(frameContainer);
+            #endif
         }
+
+        // Crear nuevo contenedor
+        frameContainer = new GameObject("FrameParts");
+        frameContainer.transform.SetParent(transform);
+        frameContainer.transform.localPosition = Vector3.zero;
+        frameContainer.transform.localRotation = Quaternion.identity;
+        frameContainer.transform.localScale = Vector3.one;
     }
     
     void CreateFrameParts()
     {
-        // Crear los bordes principales
         CreateBorder("TopBorder", new Vector3(0, gameAreaSize.y/2, 0), new Vector3(gameAreaSize.x + frameWidth*2, frameWidth, frameDepth));
         CreateBorder("BottomBorder", new Vector3(0, -gameAreaSize.y/2, 0), new Vector3(gameAreaSize.x + frameWidth*2, frameWidth, frameDepth));
         CreateBorder("LeftBorder", new Vector3(-gameAreaSize.x/2, 0, 0), new Vector3(frameWidth, gameAreaSize.y, frameDepth));
@@ -55,13 +109,13 @@ public class RetroFrameGenerator : MonoBehaviour
     {
         GameObject border = GameObject.CreatePrimitive(PrimitiveType.Cube);
         border.name = name;
-        border.transform.SetParent(transform);
+        border.transform.SetParent(frameContainer.transform, false);
         border.transform.localPosition = position;
         border.transform.localScale = scale;
         
         if (frameMaterial != null)
         {
-            border.GetComponent<Renderer>().material = frameMaterial;
+            border.GetComponent<Renderer>().sharedMaterial = frameMaterial;
         }
     }
     
@@ -84,19 +138,18 @@ public class RetroFrameGenerator : MonoBehaviour
     {
         GameObject corner = GameObject.CreatePrimitive(PrimitiveType.Cube);
         corner.name = name;
-        corner.transform.SetParent(transform);
+        corner.transform.SetParent(frameContainer.transform, false);
         corner.transform.localPosition = position;
         corner.transform.localScale = new Vector3(cornerSize, cornerSize, frameDepth);
         
         if (frameMaterial != null)
         {
-            corner.GetComponent<Renderer>().material = frameMaterial;
+            corner.GetComponent<Renderer>().sharedMaterial = frameMaterial;
         }
     }
     
     void AddBevelToFrame()
     {
-        // Añadir segmentos pequeños para crear efecto biselado
         float bevelSize = frameWidth / bevelSegments;
         
         for (int i = 0; i < bevelSegments; i++)
@@ -117,13 +170,13 @@ public class RetroFrameGenerator : MonoBehaviour
     {
         GameObject bevel = GameObject.CreatePrimitive(PrimitiveType.Cube);
         bevel.name = name;
-        bevel.transform.SetParent(transform);
+        bevel.transform.SetParent(frameContainer.transform, false);
         bevel.transform.localPosition = position;
         bevel.transform.localScale = scale;
         
         if (frameMaterial != null)
         {
-            bevel.GetComponent<Renderer>().material = frameMaterial;
+            bevel.GetComponent<Renderer>().sharedMaterial = frameMaterial;
         }
     }
 }
